@@ -1,0 +1,124 @@
+### labels
+    MATCH (n) RETURN labels(n)[0] AS label, count(*) AS n ORDER BY n DESC
+    {'label': 'Clause', 'n': 99}
+    {'label': 'Person', 'n': 37}
+    {'label': 'Article', 'n': 18}
+    {'label': 'Case', 'n': 17}
+    {'label': 'Term', 'n': 14}
+    {'label': 'Crime', 'n': 13}
+    {'label': 'Substance', 'n': 13}
+    {'label': 'Location', 'n': 8}
+### rels
+    MATCH ()-[r]->() RETURN type(r) AS rel, count(*) AS n ORDER BY n DESC
+    {'rel': 'THRESHOLD', 'n': 239}
+    {'rel': 'HAS_CLAUSE', 'n': 99}
+    {'rel': 'INVOLVED_IN', 'n': 47}
+    {'rel': 'ACCUSED_OF', 'n': 33}
+    {'rel': 'INVOLVES', 'n': 23}
+    {'rel': 'CHARGED_WITH', 'n': 20}
+    {'rel': 'LOCATED_IN', 'n': 15}
+    {'rel': 'DEFINED_IN', 'n': 14}
+    {'rel': 'DEFINES', 'n': 13}
+    {'rel': 'MENTIONS', 'n': 7}
+### distinct labels
+    MATCH (n) RETURN DISTINCT labels(n) AS labels
+    {'labels': ['Article']}
+    {'labels': ['Crime']}
+    {'labels': ['Clause']}
+    {'labels': ['Term']}
+    {'labels': ['Case']}
+    {'labels': ['Location']}
+    {'labels': ['Substance']}
+    {'labels': ['Person']}
+### E1 case without crime
+    MATCH (k:Case) WHERE NOT (k)-[:CHARGED_WITH]->() RETURN k.name AS name, k.doc_id AS doc_id
+    {'name': 'Vụ vận chuyển ma túy của Cái Quang Huy', 'doc_id': 'news-100260918080821054'}
+    {'name': 'Vụ bắt giữ Nguyễn Minh Đức', 'doc_id': 'news-100260918220613301'}
+    {'name': 'Vụ tông cảnh sát giao thông ở An Giang', 'doc_id': 'news-100260926112415229'}
+### E3 substances
+    MATCH (s:Substance) RETURN s.name AS name, COUNT { (s)<-[:INVOLVES]-() } AS cases, COUNT { (s)<-[:THRESHOLD]-() } AS thresholds, COUNT { (s)<-[:MENTIONS]-() } AS mentions ORDER BY toLower(s.name)
+    {'name': 'Amphetamine', 'cases': 0, 'thresholds': 18, 'mentions': 0}
+    {'name': 'chất ma túy khác (thể rắn)', 'cases': 0, 'thresholds': 18, 'mentions': 0}
+    {'name': 'Cocaine', 'cases': 0, 'thresholds': 18, 'mentions': 0}
+    {'name': 'côca', 'cases': 0, 'thresholds': 33, 'mentions': 2}
+    {'name': 'cần sa', 'cases': 2, 'thresholds': 33, 'mentions': 2}
+    {'name': 'etomidate', 'cases': 4, 'thresholds': 0, 'mentions': 0}
+    {'name': 'Heroine', 'cases': 0, 'thresholds': 18, 'mentions': 0}
+    {'name': 'Ketamine', 'cases': 6, 'thresholds': 0, 'mentions': 0}
+    {'name': 'ma túy tổng hợp', 'cases': 2, 'thresholds': 0, 'mentions': 0}
+    {'name': 'MDMA', 'cases': 6, 'thresholds': 18, 'mentions': 0}
+    {'name': 'Methamphetamine', 'cases': 3, 'thresholds': 18, 'mentions': 0}
+    {'name': 'thuốc phiện', 'cases': 0, 'thresholds': 47, 'mentions': 3}
+    {'name': 'XLR-11', 'cases': 0, 'thresholds': 18, 'mentions': 0}
+### E3 persons with aliases
+    MATCH (p:Person) WHERE size(p.aliases) > 0 RETURN p.name AS name, p.aliases AS aliases, COUNT { (p)-[:INVOLVED_IN]->() } AS cases
+    {'name': 'Nguyễn Minh Đức', 'aliases': ['Đức Cộng'], 'cases': 2}
+    {'name': 'Dương Minh Tuấn', 'aliases': ['Hoàng Nato'], 'cases': 4}
+    {'name': 'Phan Kim Nhi', 'aliases': ['Phannhibeauty', 'TikToker Phannhibeauty'], 'cases': 3}
+    {'name': 'Nguyễn Thị Mai Anh', 'aliases': ['bà trùm'], 'cases': 2}
+### E3 duplicate Huy cases
+    MATCH (p:Person {name:'Cái Quang Huy'})-[:INVOLVED_IN]->(k:Case) RETURN k.id AS id, k.name AS name, k.stage AS stage
+    {'id': 'news-100260918080821054#1', 'name': 'Vụ vận chuyển ma túy của Cái Quang Huy', 'stage': 'khác'}
+    {'id': 'news-100260917203001265#0', 'name': 'Vụ vận chuyển ma túy từ Đức về Việt Nam', 'stage': 'truy tố'}
+### Cases per doc
+    MATCH (k:Case) RETURN k.doc_id AS doc, collect(k.name) AS cases ORDER BY doc
+    {'doc': 'news-100260917203001265', 'cases': ['Vụ vận chuyển ma túy từ Đức về Việt Nam']}
+    {'doc': 'news-100260918080821054', 'cases': ['Vụ góp tiền mua ma túy tại Hà Nội', 'Vụ vận chuyển ma túy của Cái Quang Huy']}
+    {'doc': 'news-100260918220613301', 'cases': ['Vụ bắt giữ Nguyễn Minh Đức']}
+    {'doc': 'news-100260920221957595', 'cases': ["Vụ bắt giang hồ 'Hoàng Nato' và 126 người liên quan 8 đường dây ma túy"]}
+    {'doc': 'news-100260922111804786', 'cases': ["Vụ bắt giữ TikToker Phannhibeauty và giang hồ 'Hoàng Nato'"]}
+    {'doc': 'news-100260924095400982', 'cases': ['Vụ sử dụng ma túy etomidate của Hoàng Nato và Phan Kim Nhi']}
+    {'doc': 'news-100260924101703641', 'cases': ["Vụ bắt giữ giang hồ mạng 'Đức Cộng'"]}
+    {'doc': 'news-100260924105118645', 'cases': ['Vụ án tại Viện Pháp y tâm thần Trung ương']}
+    {'doc': 'news-100260924145818945', 'cases': ['Vụ vận chuyển 840kg ma túy đá tại Campuchia']}
+    {'doc': 'news-100260925144412498', 'cases': ['Vụ triệt phá 8 đường dây ma túy tại TP.HCM']}
+    {'doc': 'news-100260926112415229', 'cases': ['Vụ tông cảnh sát giao thông ở An Giang']}
+    {'doc': 'news-100260927182621527', 'cases': ['Vụ phát hiện 20kg ma túy tại Phú Quốc']}
+    {'doc': 'news-100260928173914514', 'cases': ['Vụ mua bán hơn 36kg ma túy tại TP.HCM']}
+    {'doc': 'news-100260930085028036', 'cases': ['Vụ tổ chức sử dụng ma túy tại Sầm Sơn']}
+    {'doc': 'news-100261002184934505', 'cases': ['Chuyên án A3-626P', 'Các chuyên án liên quan ma túy tại Quảng Ngãi']}
+### E6 accused without crime
+    MATCH (p:Person)-[r:INVOLVED_IN]->(k:Case) WHERE r.role IN ['bị cáo','bị can','nghi phạm'] AND NOT EXISTS { (p)-[:ACCUSED_OF {case_id: k.id}]->() } RETURN p.name AS name, r.role AS role, k.name AS case
+    {'name': 'Cái Quang Huy', 'role': 'bị cáo', 'case': 'Vụ vận chuyển ma túy của Cái Quang Huy'}
+    {'name': 'Nguyễn Minh Đức', 'role': 'bị can', 'case': 'Vụ bắt giữ Nguyễn Minh Đức'}
+    {'name': '7 công dân Trung Quốc', 'role': 'nghi phạm', 'case': 'Vụ vận chuyển 840kg ma túy đá tại Campuchia'}
+    {'name': 'Nguyễn Minh Nhân', 'role': 'bị can', 'case': 'Vụ tông cảnh sát giao thông ở An Giang'}
+    {'name': 'Nguyễn Thị Mai Anh', 'role': 'bị cáo', 'case': 'Vụ tổ chức sử dụng ma túy tại Sầm Sơn'}
+### Bridge Person-Crime-Article
+    MATCH (p:Person)-[a:ACCUSED_OF]->(c:Crime)<-[:DEFINES]-(ar:Article) RETURN ar.id AS article, count(DISTINCT p) AS people ORDER BY people DESC
+    {'article': 'Điều 251 BLHS', 'people': 15}
+    {'article': 'Điều 255 BLHS', 'people': 6}
+    {'article': 'Điều 249 BLHS', 'people': 4}
+    {'article': 'Điều 250 BLHS', 'people': 2}
+### Stages
+    MATCH (p:Person)-[a:ACCUSED_OF]->(c:Crime) RETURN a.stage AS stage, count(*) AS n ORDER BY n DESC
+    {'stage': 'bắt giữ', 'n': 15}
+    {'stage': 'xét xử sơ thẩm', 'n': 12}
+    {'stage': 'xét xử phúc thẩm', 'n': 4}
+    {'stage': 'truy tố', 'n': 2}
+### Q5 threshold (Cypher)
+    MATCH (p:Person {name:'Cái Quang Huy'})-[:INVOLVED_IN]->(k:Case)-[i:INVOLVES]->(s:Substance), (k)-[:CHARGED_WITH]->(:Crime)<-[:DEFINES]-(a:Article)-[:HAS_CLAUSE]->(cl:Clause)-[t:THRESHOLD]->(s) WHERE i.amount_g >= t.min_g AND (t.max_g IS NULL OR i.amount_g < t.max_g) RETURN DISTINCT s.name AS substance, i.amount AS amount, a.id AS article, cl.number AS khoan, t.point AS diem, cl.penalty AS penalty
+    {'substance': 'MDMA', 'amount': 'hơn 9,6kg', 'article': 'Điều 250 BLHS', 'khoan': 4, 'diem': 'b', 'penalty': 'phạt tù 20 năm, tù chung thân hoặc tử hình'}
+### Q4 max frame
+    MATCH (p:Person)-[:ACCUSED_OF]->(c:Crime)<-[:DEFINES]-(a:Article) WHERE 'Hoàng Nato' IN p.aliases RETURN DISTINCT p.name AS name, c.name AS crime, a.id AS article, a.max_clause AS max_clause, a.max_penalty AS max_penalty
+    {'name': 'Dương Minh Tuấn', 'crime': 'tổ chức sử dụng trái phép chất ma túy', 'article': 'Điều 255 BLHS', 'max_clause': 4, 'max_penalty': 'phạt tù 20 năm hoặc tù chung thân'}
+### Q1 term
+    MATCH (t:Term {name:'Tiền chất'})-[:DEFINED_IN]->(a) RETURN a.id AS article, t.definition AS definition
+    {'article': 'Điều 2 Luật PCMT', 'definition': 'Tiền chất là hóa chất không thể thiếu được trong quá trình điều chế, sản xuất chất ma túy được quy định trong danh mục tiền chất do Chính phủ ban hành.'}
+### Q6 MDMA cases
+    MATCH (k:Case)-[i:INVOLVES]->(:Substance {name:'MDMA'}) RETURN k.name AS case, i.amount AS amount, k.doc_id AS doc, [(p:Person)-[r:INVOLVED_IN]->(k) WHERE r.role <> 'cán bộ' | p.name][..3] AS people
+    {'case': 'Vụ tổ chức sử dụng ma túy tại Sầm Sơn', 'amount': '0,686g', 'doc': 'news-100260930085028036', 'people': ['Trần Quốc An', 'Ngô Việt Dũng', 'Lê Văn Đông']}
+    {'case': 'Vụ án tại Viện Pháp y tâm thần Trung ương', 'amount': '', 'doc': 'news-100260924105118645', 'people': ['Nguyễn Thị Mai Anh', 'Bùi Thị Thanh Thủy', 'Lê Văn Đông']}
+    {'case': "Vụ bắt giang hồ 'Hoàng Nato' và 126 người liên quan 8 đường dây ma túy", 'amount': '', 'doc': 'news-100260920221957595', 'people': ['Nguyễn Thành Quốc', 'Dương Minh Tuấn', 'Phạm Tài Vình']}
+    {'case': 'Vụ vận chuyển ma túy của Cái Quang Huy', 'amount': 'hơn 9,6kg', 'doc': 'news-100260918080821054', 'people': ['Cái Quang Huy']}
+    {'case': 'Vụ góp tiền mua ma túy tại Hà Nội', 'amount': '5 viên nén màu trắng', 'doc': 'news-100260918080821054', 'people': ['Kim Xuân Tuấn', 'Lê Minh Thành', 'Nguyễn Quang Hưng']}
+    {'case': 'Vụ vận chuyển ma túy từ Đức về Việt Nam', 'amount': 'hơn 9,6kg', 'doc': 'news-100260917203001265', 'people': ['Cái Quang Huy', 'Nguyễn Tiến Đạt', 'Nguyễn Hữu Đức']}
+### Wrong link check
+    MATCH (k:Case)-[:CHARGED_WITH]->(c:Crime {name:'tổ chức sử dụng trái phép chất ma túy'}) RETURN k.name AS case, k.doc_id AS doc
+    {'case': 'Vụ tổ chức sử dụng ma túy tại Sầm Sơn', 'doc': 'news-100260930085028036'}
+    {'case': 'Vụ mua bán hơn 36kg ma túy tại TP.HCM', 'doc': 'news-100260928173914514'}
+    {'case': 'Vụ triệt phá 8 đường dây ma túy tại TP.HCM', 'doc': 'news-100260925144412498'}
+    {'case': "Vụ bắt giữ giang hồ mạng 'Đức Cộng'", 'doc': 'news-100260924101703641'}
+    {'case': 'Vụ sử dụng ma túy etomidate của Hoàng Nato và Phan Kim Nhi', 'doc': 'news-100260924095400982'}
+    {'case': "Vụ bắt giữ TikToker Phannhibeauty và giang hồ 'Hoàng Nato'", 'doc': 'news-100260922111804786'}
+    {'case': "Vụ bắt giang hồ 'Hoàng Nato' và 126 người liên quan 8 đường dây ma túy", 'doc': 'news-100260920221957595'}
